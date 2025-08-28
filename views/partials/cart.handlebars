@@ -1,0 +1,108 @@
+<div class="container mt-4 text-center p-4" style="border: 2px solid #0a7979;">
+    <h3 class="text-white">Your Cart</h3>
+    <div class="row">
+        <ul id="cart-list" class="list-group col-md-6">
+            <!-- Cart items will be rendered here -->
+        </ul>
+        <div class="col-md-4 text-white d-flex flex-column">
+            <p>total: (under construction)</p>
+            <button class="btn btn-outline-info col-md-4 ms-auto" id="PO">Place order</button>
+        </div>
+        
+    </div>
+</div>
+<script>
+    function placeOrder(){
+        const client = JSON.parse(localStorage.getItem('client'));
+        fetch('/client/order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                client_name: client.name,
+                order: client.order
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success===true){
+                alert('Order placed successfully!');
+                localStorage.removeItem('client');
+                window.location.reload();
+            } else {
+                alert('Failed to place order. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while placing the order.');
+        });
+    }
+    document.getElementById('PO').addEventListener('click', placeOrder);
+    function addToCart(code, name, price, quantity){
+        //get client order array from local storage
+        const client = JSON.parse(localStorage.getItem('client'));
+        //check if item already exists in order array
+        const existingItemIndex = client.order.findIndex(item => item.code === code);
+        if(existingItemIndex > -1){
+            //if exists, update quantity
+            client.order[existingItemIndex].quantity += quantity;
+        } else {
+            //if not, add new item to order array
+            client.order.push({ code, name, price, quantity });
+        }
+        //save updated order array to local storage
+        localStorage.setItem('client', JSON.stringify(client));
+    }
+
+    function removeFromCart(index) {
+        const client = JSON.parse(localStorage.getItem('client'));
+        if (client && Array.isArray(client.order) && index >= 0 && index < client.order.length) {
+            client.order.splice(index, 1);
+            localStorage.setItem('client', JSON.stringify(client));
+            renderCart();
+        }
+    }
+
+    function renderCart() {
+        const client = JSON.parse(localStorage.getItem('client'));
+        const cartList = document.getElementById('cart-list');
+        cartList.innerHTML = '';
+        if (client && Array.isArray(client.order)) {
+            client.order.forEach(function(item, idx) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="text-white mb-2">
+                        <strong>${item.name}</strong> - $${item.price} x ${item.quantity}
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeFromCart(${idx})">Remove</button>
+                `;
+                cartList.appendChild(li);
+            });
+        }
+    }
+    window.onload = function() {
+        const client = JSON.parse(localStorage.getItem('client'));
+        if (!client) {
+            const name = window.prompt("Enter your name to start an order:");
+            if (name) {
+                localStorage.setItem('client', JSON.stringify({ name, order:[] }));
+            } else {
+                alert('Name is required to start an order.');
+                window.location.href = '/client/order';
+            }
+        }
+        renderCart();
+    };
+
+    document.addEventListener('click', (e)=>{
+        if(e.target.innerHTML === 'Add to Order'){
+            let code = e.target.id;
+            let name = e.target.parentElement.parentElement.querySelector('.card-title').innerText;
+            let price = parseFloat(e.target.parentElement.querySelector('h4').innerText.replace('$',''));
+            addToCart(code, name, price, 1);
+            renderCart();
+        }
+    })
+</script>

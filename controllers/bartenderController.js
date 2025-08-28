@@ -1,4 +1,5 @@
 const Order = require('../models/orders');
+const employee = require('../models/employees');
 
 const showQueue = async (req, res) => {
     const orders = await Order.getAllOrders();
@@ -13,13 +14,24 @@ const showQueue = async (req, res) => {
     });
 };
 
-const updateStatus = (req, res) => {
-    const { orderId, newStatus } = req.body;
-    Order.updateStatus(orderId, newStatus);
-    res.redirect('/bartender/queue');
+const updateStatus = async (req, res) => {
+    const { orderId, newStatus, employeeId } = req.body;
+    const response = await Order.updateStatus(orderId, newStatus, employeeId);
+    response.success===true ? res.redirect('/bartender/queue') : res.status(500).send(response.message);
 };
 
+const validateEmployee = async (req, res) => {
+    const { code } = req.body;
+    const emp = await employee.getEmployee(code);
+    
+    if (emp) {
+        res.status(200).json(emp);
+    } else {
+        res.status(401).send('Invalid employee code');
+    }
+};
 module.exports = {
     showQueue,  
-    updateStatus
+    updateStatus,
+    validateEmployee
 };

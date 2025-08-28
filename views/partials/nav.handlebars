@@ -27,9 +27,37 @@
                     <a class="nav-link" href="/client/order">Start an Order</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/bartender/queue">Bartender Hub</a>
+                    <a class="nav-link" id="init">Bartender Hub</a>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
+<script>
+    document.getElementById('init').addEventListener('click', function() {
+        
+        const code = window.prompt("Enter employee Code:");
+        
+        fetch(`/bartender/init`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data) {
+                    sessionStorage.setItem('employee', JSON.stringify(data));
+                    window.location.href = '/bartender/queue';
+                } else {
+                    alert('Invalid employee code. Access denied.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while initializing the bartender session.');
+            });
+    });
+</script>
